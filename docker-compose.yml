@@ -1,0 +1,41 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: expensetracker
+    ports:
+      - "27017:27017"
+
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: et_backend
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/expensetracker
+      - PORT=5000
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: et_frontend
+    depends_on:
+      - backend
+    # frontend served via nginx on port 80
+    ports:
+      - "80:80"
+    # ensure nginx can reach backend via service name 'backend' - the client nginx proxies to 'backend:5000'
+    networks:
+      - default
+
+volumes:
+  mongo-data:
